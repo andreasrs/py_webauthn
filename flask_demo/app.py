@@ -30,6 +30,7 @@ app.secret_key = sk if sk else os.urandom(40)
 db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
+attestation = 'direct'
 
 RP_ID = 'localhost'
 ORIGIN = 'https://localhost:5000'
@@ -89,7 +90,7 @@ def webauthn_begin_activate():
 
     make_credential_options = webauthn.WebAuthnMakeCredentialOptions(
         challenge, rp_name, RP_ID, ukey, username, display_name,
-        'https://example.com')
+        'https://example.com', 60000, attestation)
 
     return jsonify(make_credential_options.registration_dict)
 
@@ -131,13 +132,13 @@ def verify_credential_info():
     username = session['register_username']
     display_name = session['register_display_name']
     ukey = session['register_ukey']
+    none_attestation_permitted = attestation == 'none'
 
     registration_response = request.form
     trust_anchor_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), TRUST_ANCHOR_DIR)
     trusted_attestation_cert_required = True
     self_attestation_permitted = True
-    none_attestation_permitted = True
 
     webauthn_registration_response = webauthn.WebAuthnRegistrationResponse(
         RP_ID,
